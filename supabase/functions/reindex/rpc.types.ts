@@ -1,16 +1,5 @@
 import z from "npm:zod";
 
-export const formatHexStringForByteA = z.string().transform((hexString) =>
-  "\\x" + hexString.substring(2)
-);
-
-export const formatHexStringForByteAOptional = z
-  .string()
-  .optional()
-  .transform((hexString) =>
-    hexString !== undefined ? "\\x" + hexString.substring(2) : undefined
-  );
-
 export const formatSecondsForTimestamp = z.number().transform((num) =>
   new Date(num * 1000).toISOString()
 );
@@ -22,36 +11,36 @@ export const recipeQuerySchema = z.object({
 });
 
 export const recipeSchema = z.object({
-  id: formatHexStringForByteA,
+  id: z.string(),
   name: z.string(),
   displayName: z.string().optional(),
-  creator: formatHexStringForByteA,
+  creator: z.string(),
   created: formatSecondsForTimestamp,
   description: z.string().optional(),
   keywords: z.array(z.string()).optional(),
   queries: z.array(recipeQuerySchema),
   processor: z.string(),
   schema: z.string(),
-  resolver: formatHexStringForByteA,
+  resolver: z.string(),
   revokable: z.boolean(),
   publish_state: z.string(),
 });
 
 export const runSchema = z.object({
-  id: formatHexStringForByteA,
-  recipe_id: formatHexStringForByteA,
-  creator: formatHexStringForByteA,
+  id: z.string(),
+  recipe_id: z.string(),
+  creator: z.string(),
   created: formatSecondsForTimestamp,
   chain_id: z.number(),
-  gas: formatHexStringForByteAOptional,
-  base_fee_per_gas: formatHexStringForByteAOptional,
-  max_priority_fee_per_gas: formatHexStringForByteAOptional,
-  user_fee: formatHexStringForByteAOptional,
-  payment_transaction_hash: formatHexStringForByteAOptional,
-  payment_block_number: formatHexStringForByteAOptional,
-  payment_log_index: formatHexStringForByteAOptional,
-  attestation_transaction_hash: formatHexStringForByteAOptional,
-  attestation_uid: formatHexStringForByteAOptional,
+  gas: z.string().optional(),
+  base_fee_per_gas: z.string().optional(),
+  max_priority_fee_per_gas: z.string().optional(),
+  user_fee: z.string().optional(),
+  payment_transaction_hash: z.string().optional(),
+  payment_block_number: z.string().optional(),
+  payment_log_index: z.string().optional(),
+  attestation_transaction_hash: z.string().optional(),
+  attestation_uid: z.string().optional(),
   is_cancelled: z.boolean(),
   error: z.string().optional(),
 });
@@ -86,7 +75,7 @@ export type ChangeLogAction = z.infer<typeof changeLogActionSchema>;
 
 export const changeLogItemSchema = z.object({
   type_name: typeNameSchema,
-  id: formatHexStringForByteA,
+  id: z.string(),
   action: changeLogActionSchema,
   patch: z.string(),
 });

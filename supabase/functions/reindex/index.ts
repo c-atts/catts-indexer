@@ -64,11 +64,5 @@ Deno.serve(async (_) => {
     }
   }
 
-  return new Response(
-    JSON.stringify(
-      res,
-      (_, value) => typeof value === "bigint" ? value.toString() : value,
-    ),
-    { headers: { "Content-Type": "application/json" } },
-  );
+  return new Response("OK", { status: 200 });
 });

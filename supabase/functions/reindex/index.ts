@@ -1,12 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { ChangeLogResponse, changeLogResponseSchema } from "./rpc.types.ts";
+import { createRecipe, updateRecipe } from "./recipe.ts";
 import { createRun, updateRun } from "./run.ts";
 
 import { catts_engine } from "./declarations/index.js";
-import { createRecipe } from "./recipe.ts";
 import { getNextLogIndex } from "./change-log.ts";
 import { supabase } from "./db.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
 Deno.serve(async (_) => {
   if (!catts_engine) {
@@ -20,29 +26,35 @@ Deno.serve(async (_) => {
   );
 
   if ("Err" in res) {
-    return new Response(JSON.stringify(res.Err), { status: 500 });
+    return new Response(JSON.stringify(res.Err), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
 
   // Sort by index, oldest first
-  const indexedChangeLogItems = res.Ok.data.sort((a, b) => a.index - b.index);
+  const logItems = res.Ok.data.sort((a, b) => a.index - b.index);
 
-  for (const indexedItem of indexedChangeLogItems) {
+  for (const logItem of logItems) {
     try {
-      switch (indexedItem.item.action) {
+      switch (logItem.data.action) {
         case "Create":
-          switch (indexedItem.item.type_name) {
+          switch (logItem.data.type_name) {
             case "Recipe":
-              await createRecipe(indexedItem.item);
+              await createRecipe(logItem.data);
               break;
             case "Run":
-              await createRun(indexedItem.item);
+              await createRun(logItem.data);
               break;
           }
           break;
         case "Update":
-          switch (indexedItem.item.type_name) {
+          switch (logItem.data.type_name) {
+            case "Recipe":
+              await updateRecipe(logItem.data);
+              break;
             case "Run":
-              await updateRun(indexedItem.item);
+              await updateRun(logItem.data);
               break;
           }
           break;
@@ -52,7 +64,7 @@ Deno.serve(async (_) => {
       const { selectError } = await supabase
         .from("change_log_tracker")
         .update({
-          latest_change_log_id: indexedItem.index,
+          latest_change_log_id: logItem.index,
           last_updated: new Date().toISOString(),
         })
         .eq("id", 1);
@@ -64,5 +76,5 @@ Deno.serve(async (_) => {
     }
   }
 
-  return new Response("OK", { status: 200 });
+  return new Response("OK", { status: 200, headers: corsHeaders });
 });

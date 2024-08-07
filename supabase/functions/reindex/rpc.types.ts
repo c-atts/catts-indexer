@@ -84,7 +84,7 @@ export type ChangeLogItem = z.infer<typeof changeLogItemSchema>;
 
 export const indexedChangeLogItemSchema = z.object({
   index: z.number(),
-  item: changeLogItemSchema,
+  data: changeLogItemSchema,
 });
 
 export type IndexedChangeLogItem = z.infer<typeof indexedChangeLogItemSchema>;

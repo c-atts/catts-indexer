@@ -45,3 +45,32 @@ CREATE TABLE change_log_tracker (
 );
 
 INSERT INTO change_log_tracker (latest_change_log_id) VALUES (NULL);
+
+CREATE OR REPLACE FUNCTION list_popular_recipes()
+RETURNS TABLE (
+  id TEXT,
+  name TEXT,
+  description TEXT,
+  creator TEXT,
+  created TIMESTAMP,
+  nr_of_runs INTEGER
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    r.id,
+    r.name,
+    r.description,
+    r.creator,
+    r.created,
+    COUNT(run.id)::INTEGER AS nr_of_runs
+  FROM
+    Recipe r
+  LEFT JOIN
+    Run run ON r.id = run.recipe_id
+  GROUP BY
+    r.id
+  ORDER BY
+    nr_of_runs DESC;
+END;
+$$ LANGUAGE plpgsql;

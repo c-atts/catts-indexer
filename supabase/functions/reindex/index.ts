@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { ChangeLogResponse, changeLogResponseSchema } from "./rpc.types.ts";
-import { createRecipe, updateRecipe } from "./recipe.ts";
+import { createRecipe, deleteRecipe, updateRecipe } from "./recipe.ts";
 import { createRun, updateRun } from "./run.ts";
 
 import { catts_engine } from "./declarations/index.js";
@@ -59,6 +59,11 @@ Deno.serve(async (_) => {
           }
           break;
         case "Delete":
+          switch (logItem.data.type_name) {
+            case "Recipe":
+              await deleteRecipe(logItem.data);
+              break;
+          }
           break;
       }
       const { selectError } = await supabase

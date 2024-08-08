@@ -52,3 +52,14 @@ export async function updateRecipe(item: ChangeLogItem) {
     throw updateError;
   }
 }
+
+export async function deleteRecipe(item: ChangeLogItem) {
+  const { error: deleteError } = await supabase
+    .from("recipe")
+    .delete()
+    .eq("id", item.id);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+}

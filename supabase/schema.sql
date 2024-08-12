@@ -46,7 +46,10 @@ CREATE TABLE change_log_tracker (
 
 INSERT INTO change_log_tracker (latest_change_log_id) VALUES (NULL);
 
-CREATE OR REPLACE FUNCTION list_popular_recipes()
+CREATE OR REPLACE FUNCTION list_popular_recipes(
+  page INTEGER,
+  pageSize INTEGER
+)
 RETURNS TABLE (
   id TEXT,
   name TEXT,
@@ -71,6 +74,8 @@ BEGIN
   GROUP BY
     r.id
   ORDER BY
-    nr_of_runs DESC;
+    nr_of_runs DESC
+  LIMIT pageSize
+  OFFSET (page - 1) * pageSize;
 END;
 $$ LANGUAGE plpgsql;

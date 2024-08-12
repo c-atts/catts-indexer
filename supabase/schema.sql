@@ -3,7 +3,7 @@ CREATE TABLE Recipe (
     name TEXT NOT NULL, 
     display_name TEXT, 
     creator TEXT NOT NULL, 
-    created TIMESTAMP NOT NULL,
+    created TIMESTAMPTZ NOT NULL,
     description TEXT, 
     keywords TEXT[],
     queries JSONB NOT NULL, 
@@ -19,7 +19,7 @@ CREATE TABLE Run (
     id TEXT NOT NULL,
     recipe_id TEXT NOT NULL,
     creator TEXT NOT NULL, 
-    created TIMESTAMP NOT NULL,
+    created TIMESTAMPTZ NOT NULL,
     chain_id BIGINT NOT NULL,
     gas TEXT, 
     base_fee_per_gas TEXT, 
@@ -52,7 +52,7 @@ RETURNS TABLE (
   name TEXT,
   description TEXT,
   creator TEXT,
-  created TIMESTAMP,
+  created TIMESTAMPTZ,
   nr_of_runs INTEGER
 ) AS $$
 BEGIN

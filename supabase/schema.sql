@@ -1,7 +1,6 @@
 CREATE TABLE Recipe (
     id TEXT NOT NULL, 
     name TEXT NOT NULL, 
-    display_name TEXT, 
     creator TEXT NOT NULL, 
     created TIMESTAMPTZ NOT NULL,
     description TEXT, 

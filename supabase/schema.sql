@@ -11,6 +11,7 @@ CREATE TABLE Recipe (
     resolver TEXT NOT NULL, 
     revokable BOOLEAN NOT NULL, 
     publish_state TEXT NOT NULL, 
+    search_vector tsvector,
     PRIMARY KEY (id)
 );
 
@@ -43,11 +44,33 @@ CREATE TABLE change_log_tracker (
     last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- INITIALIZE CHANGE_LOG_TRACKER
+-- Add a search index to recipes
+
+CREATE INDEX search_vector_idx ON Recipe USING GIN (search_vector);
+
+-- Trigger reindex of search_vector on insert/update
+
+CREATE OR REPLACE FUNCTION update_search_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector = 
+        setweight(to_tsvector('english', coalesce(NEW.name, '')), 'A') ||
+        setweight(to_tsvector('english', coalesce(NEW.creator, '')), 'A') ||
+        setweight(to_tsvector('english', coalesce(array_to_string(NEW.keywords, ' '), '')), 'B') ||
+        setweight(to_tsvector('english', coalesce(NEW.description, '')), 'C');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER search_vector_update
+BEFORE INSERT OR UPDATE ON Recipe
+FOR EACH ROW EXECUTE FUNCTION update_search_vector();
+
+-- Initialze change_log_tracker
 
 INSERT INTO change_log_tracker (latest_change_log_id) VALUES (NULL);
 
--- POPULAR RECIPES
+-- Function: list_popular_recipes
 
 CREATE OR REPLACE FUNCTION list_popular_recipes(
   page INTEGER,
@@ -87,17 +110,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- RECIPE SEARCH
-
-ALTER TABLE Recipe ADD COLUMN search_vector tsvector;
-
-UPDATE Recipe SET search_vector = 
-    setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(creator, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(array_to_string(keywords, ' '), '')), 'B') ||
-    setweight(to_tsvector('english', coalesce(description, '')), 'C');
-
-CREATE INDEX search_vector_idx ON Recipe USING GIN (search_vector);
+-- Function: search_recipes
 
 CREATE OR REPLACE FUNCTION search_recipes(search_query TEXT)
 RETURNS TABLE(
@@ -126,3 +139,4 @@ BEGIN
     ORDER BY rank DESC;
 END;
 $$ LANGUAGE plpgsql;
+

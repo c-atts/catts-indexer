@@ -59,6 +59,8 @@ RETURNS TABLE (
   description TEXT,
   creator TEXT,
   created TIMESTAMPTZ,
+  keywords TEXT[], 
+  publish_state TEXT,
   nr_of_runs INTEGER
 ) AS $$
 BEGIN
@@ -69,6 +71,8 @@ BEGIN
     r.description,
     r.creator,
     r.created,
+    r.keywords,
+    r.publish_state,
     COUNT(run.id)::INTEGER AS nr_of_runs
   FROM
     Recipe r
@@ -96,11 +100,27 @@ UPDATE Recipe SET search_vector =
 CREATE INDEX search_vector_idx ON Recipe USING GIN (search_vector);
 
 CREATE OR REPLACE FUNCTION search_recipes(search_query TEXT)
-RETURNS TABLE(id TEXT, name TEXT, description TEXT, creator TEXT, created TIMESTAMPTZ, keywords TEXT[], publish_state TEXT, rank REAL) AS $$
+RETURNS TABLE(
+  id TEXT, 
+  name TEXT, 
+  description TEXT, 
+  creator TEXT, 
+  created TIMESTAMPTZ, 
+  keywords TEXT[], 
+  publish_state TEXT, 
+  rank REAL
+) AS $$
 BEGIN
     RETURN QUERY
-    SELECT Recipe.id, Recipe.name, Recipe.description, Recipe.creator, Recipe.created, Recipe.keywords, Recipe.publish_state,
-           ts_rank(Recipe.search_vector, to_tsquery('english', search_query)) AS rank
+    SELECT 
+      Recipe.id, 
+      Recipe.name, 
+      Recipe.description, 
+      Recipe.creator, 
+      Recipe.created, 
+      Recipe.keywords, 
+      Recipe.publish_state,
+      ts_rank(Recipe.search_vector, to_tsquery('english', search_query)) AS rank
     FROM Recipe
     WHERE Recipe.search_vector @@ to_tsquery('english', search_query)
     ORDER BY rank DESC;

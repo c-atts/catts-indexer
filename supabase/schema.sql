@@ -36,14 +36,18 @@ CREATE TABLE Run (
       FOREIGN KEY(recipe_id) 
 	  REFERENCES Recipe(id)
 );
-
+    
 CREATE TABLE change_log_tracker (
     id SERIAL PRIMARY KEY,
     latest_change_log_id BIGINT,
     last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- INITIALIZE CHANGE_LOG_TRACKER
+
 INSERT INTO change_log_tracker (latest_change_log_id) VALUES (NULL);
+
+-- POPULAR RECIPES
 
 CREATE OR REPLACE FUNCTION list_popular_recipes(
   page INTEGER,
@@ -76,5 +80,29 @@ BEGIN
     nr_of_runs DESC
   LIMIT pageSize
   OFFSET (page - 1) * pageSize;
+END;
+$$ LANGUAGE plpgsql;
+
+-- RECIPE SEARCH
+
+ALTER TABLE Recipe ADD COLUMN search_vector tsvector;
+
+UPDATE Recipe SET search_vector = 
+    setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(creator, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(array_to_string(keywords, ' '), '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(description, '')), 'C');
+
+CREATE INDEX search_vector_idx ON Recipe USING GIN (search_vector);
+
+CREATE OR REPLACE FUNCTION search_recipes(search_query TEXT)
+RETURNS TABLE(id TEXT, name TEXT, description TEXT, creator TEXT, created TIMESTAMPTZ, keywords TEXT[], publish_state TEXT, rank REAL) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Recipe.id, Recipe.name, Recipe.description, Recipe.creator, Recipe.created, Recipe.keywords, Recipe.publish_state,
+           ts_rank(Recipe.search_vector, to_tsquery('english', search_query)) AS rank
+    FROM Recipe
+    WHERE Recipe.search_vector @@ to_tsquery('english', search_query)
+    ORDER BY rank DESC;
 END;
 $$ LANGUAGE plpgsql;

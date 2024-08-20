@@ -5,11 +5,7 @@ import { supabase } from "./db.ts";
 
 export async function createRecipe(item: ChangeLogItem) {
   const recipe = recipeSchema.parse(JSON.parse(item.patch));
-  const { error: selectError } = await supabase
-    .from("recipe")
-    .insert([
-      recipe,
-    ]);
+  const { error: selectError } = await supabase.from("recipe").insert([recipe]);
 
   if (selectError) {
     throw selectError;

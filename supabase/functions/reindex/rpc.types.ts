@@ -1,13 +1,22 @@
 import z from "npm:zod";
 
-export const formatSecondsForTimestamp = z.number().transform((num) =>
-  new Date(num * 1000).toISOString()
-);
+export const formatSecondsForTimestamp = z
+  .number()
+  .transform((num) => new Date(num * 1000).toISOString());
+
+export const recipeQueryBodySchema = z
+  .object({
+    query: z.string(),
+    variables: z.string(),
+  })
+  .optional()
+  .nullable();
 
 export const recipeQuerySchema = z.object({
-  endpoint: z.string(),
-  query: z.string(),
-  variables: z.string(),
+  url: z.string(),
+  headers: z.string().optional().nullable(),
+  filter: z.string().optional().nullable(),
+  body: recipeQueryBodySchema,
 });
 
 export const recipeSchema = z.object({
@@ -47,29 +56,33 @@ export const runSchema = z.object({
 
 export type Run = z.infer<typeof runSchema>;
 
-export const typeNameSchema = z.union([
-  z.object({ Recipe: z.null() }),
-  z.object({ Run: z.null() }),
-  z.object({ User: z.null() }),
-]).transform((obj) => {
-  if ("Recipe" in obj) return "Recipe";
-  if ("Run" in obj) return "Run";
-  if ("User" in obj) return "User";
-  throw new Error("Invalid type");
-});
+export const typeNameSchema = z
+  .union([
+    z.object({ Recipe: z.null() }),
+    z.object({ Run: z.null() }),
+    z.object({ User: z.null() }),
+  ])
+  .transform((obj) => {
+    if ("Recipe" in obj) return "Recipe";
+    if ("Run" in obj) return "Run";
+    if ("User" in obj) return "User";
+    throw new Error("Invalid type");
+  });
 
 export type TypeName = z.infer<typeof typeNameSchema>;
 
-export const changeLogActionSchema = z.union([
-  z.object({ Create: z.null() }),
-  z.object({ Update: z.null() }),
-  z.object({ Delete: z.null() }),
-]).transform((obj) => {
-  if ("Create" in obj) return "Create";
-  if ("Update" in obj) return "Update";
-  if ("Delete" in obj) return "Delete";
-  throw new Error("Invalid action");
-});
+export const changeLogActionSchema = z
+  .union([
+    z.object({ Create: z.null() }),
+    z.object({ Update: z.null() }),
+    z.object({ Delete: z.null() }),
+  ])
+  .transform((obj) => {
+    if ("Create" in obj) return "Create";
+    if ("Update" in obj) return "Update";
+    if ("Delete" in obj) return "Delete";
+    throw new Error("Invalid action");
+  });
 
 export type ChangeLogAction = z.infer<typeof changeLogActionSchema>;
 
